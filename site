@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador Interativo: Criptografia de Ponta a Ponta (E2EE)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Neutral Tech -->
+    <!-- Application Structure Plan: A single-page, multi-section application designed for learning. It starts with an introduction (What is E2EE?), moves to an interactive process diagram (How it works?), then to interactive cards explaining protections (What it protects against?), and finishes with an interactive quiz (Test your knowledge). This structure replaces a linear slideshow with an engaging, user-driven exploratory experience, which is more effective for web-based learning and comprehension. -->
+    <!-- Visualization & Content Choices: Report Info: E2EE process -> Goal: Organize/Explain -> Viz: Interactive HTML/CSS diagram with steps -> Interaction: User clicks to advance through the visual flow -> Justification: Transforms a complex, abstract process into a simple, visual, and memorable story. | Report Info: Protected Attacks -> Goal: Inform/Compare -> Viz: Click-to-reveal info cards -> Interaction: User clicks a card to see details -> Justification: Encourages user interaction and chunks information for easier digestion. | Report Info: Quiz Question -> Goal: Engage/Assess -> Viz: Interactive quiz form -> Interaction: User selects an answer and gets immediate, detailed feedback -> Justification: Promotes active recall and reinforces learning points effectively. All interactions are handled by Vanilla JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .section-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+        }
+        .step-content {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .hidden-step {
+            opacity: 0;
+            transform: translateY(10px);
+            position: absolute;
+            pointer-events: none;
+        }
+        .attack-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .attack-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .quiz-option {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .quiz-option.selected {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+        .quiz-option.correct {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+        .quiz-option.incorrect {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .btn-primary {
+            background-color: #1e293b; /* bg-slate-800 */
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #334155; /* bg-slate-700 */
+        }
+        .btn-primary:disabled {
+            background-color: #94a3b8; /* bg-slate-400 */
+            cursor: not-allowed;
+        }
+        .icon {
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+        .path-line {
+            height: 2px;
+            background-color: #cbd5e1; /* bg-slate-300 */
+            flex-grow: 1;
+        }
+        .step-indicator {
+            height: 0.75rem;
+            width: 0.75rem;
+            border-radius: 9999px;
+            background-color: #e2e8f0; /* bg-slate-200 */
+            transition: background-color 0.5s ease;
+        }
+        .step-indicator.active {
+            background-color: #3b82f6; /* bg-blue-500 */
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+
+    <div class="container mx-auto max-w-5xl p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-10 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">Criptografia de Ponta a Ponta (E2EE)</h1>
+            <p class="text-lg text-slate-600 mt-2">Um Guia Interativo sobre o Mecanismo de Segurança</p>
+        </header>
+
+        <!-- Section 1: O Que é E2EE? -->
+        <section id="intro" class="section-card">
+            <h2 class="text-3xl font-bold mb-4 text-slate-900">1. O Que é E2EE?</h2>
+            <p class="text-slate-600 mb-6">Esta seção introduz o conceito fundamental da Criptografia de Ponta a Ponta. Aqui, você entenderá a definição, o princípio de funcionamento e por que ela é crucial para a privacidade digital hoje em dia.</p>
+            <div class="grid md:grid-cols-3 gap-4 text-center">
+                <div class="bg-slate-100 p-6 rounded-lg">
+                    <h3 class="font-bold text-lg mb-2 text-slate-800">Definição</h3>
+                    <p>Garante que **apenas o remetente e o destinatário** possam ler o conteúdo de uma comunicação.</p>
+                </div>
+                <div class="bg-slate-100 p-6 rounded-lg">
+                    <h3 class="font-bold text-lg mb-2 text-slate-800">Princípio Base</h3>
+                    <p>A mensagem é **criptografada na origem** e **descriptografada apenas no destino final**.</p>
+                </div>
+                <div class="bg-slate-100 p-6 rounded-lg">
+                    <h3 class="font-bold text-lg mb-2 text-slate-800">Privacidade Total</h3>
+                    <p>Cria uma "bolha" de privacidade para suas conversas, inacessível a intermediários.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Como Funciona? -->
+        <section id="how-it-works" class="section-card">
+            <h2 class="text-3xl font-bold mb-4 text-slate-900">2. Como a E2EE Funciona?</h2>
+            <p class="text-slate-600 mb-8">Nesta seção interativa, você controlará o fluxo de uma mensagem para ver, passo a passo, como a Criptografia de Ponta a Ponta protege uma comunicação. Clique no botão "Próximo Passo" para avançar na animação.</p>
+            
+            <div class="relative bg-slate-100 p-6 rounded-lg flex flex-col justify-center">
+                <!-- Visual Diagram -->
+                <div class="flex items-center justify-between mb-4 w-full px-4 md:px-8">
+                    <div class="text-center w-20">
+                        <div class="icon">📱</div>
+                        <div class="font-bold text-sm text-slate-800">Remetente</div>
+                    </div>
+                    <div class="path-line mx-2"></div>
+                     <div class="text-center w-20">
+                        <div class="icon">☁️</div>
+                        <div class="font-bold text-sm text-slate-800">Servidor</div>
+                    </div>
+                    <div class="path-line mx-2"></div>
+                    <div class="text-center w-20">
+                        <div class="icon">💻</div>
+                        <div class="font-bold text-sm text-slate-800">Destinatário</div>
+                    </div>
+                </div>
+
+                <!-- Step Content -->
+                <div id="step-container" class="relative text-center min-h-[100px] flex items-center justify-center p-4">
+                    <div id="step-0" class="step-content">
+                        <p class="text-lg">O processo usa um par de chaves por usuário: uma **Pública** (cadeado) e uma **Privada** (chave única).</p>
+                    </div>
+                    <div id="step-1" class="step-content hidden-step">
+                        <p class="text-lg">O remetente usa a **Chave Pública** do destinatário para criptografar a mensagem. ✉️ ➜ 🔐</p>
+                    </div>
+                    <div id="step-2" class="step-content hidden-step">
+                        <p class="text-lg">A mensagem criptografada (🔐) viaja pela rede. O servidor a vê, mas não consegue ler.</p>
+                    </div>
+                    <div id="step-3" class="step-content hidden-step">
+                        <p class="text-lg">O destinatário usa sua **Chave Privada** secreta para descriptografar a mensagem. 🔐 ➜ ✉️</p>
+                    </div>
+                     <div id="step-4" class="step-content hidden-step">
+                        <p class="text-lg font-bold text-green-600">Comunicação segura e privada concluída! ✅</p>
+                    </div>
+                </div>
+
+                 <!-- Controls -->
+                <div class="mt-6 flex justify-center items-center gap-4">
+                    <button id="restart-btn" class="py-2 px-4 rounded-lg btn-primary">Reiniciar</button>
+                    <div id="step-indicators" class="flex gap-2 items-center">
+                        <div class="step-indicator active"></div>
+                        <div class="step-indicator"></div>
+                        <div class="step-indicator"></div>
+                        <div class="step-indicator"></div>
+                        <div class="step-indicator"></div>
+                    </div>
+                    <button id="next-step-btn" class="py-2 px-4 rounded-lg btn-primary">Próximo Passo</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Ataques Protegidos -->
+        <section id="attacks" class="section-card">
+            <h2 class="text-3xl font-bold mb-4 text-slate-900">3. Ataques Protegidos</h2>
+            <p class="text-slate-600 mb-8">A E2EE é uma poderosa defesa contra várias ameaças digitais. Clique em cada um dos cartões abaixo para descobrir qual tipo de ataque a E2EE ajuda a prevenir e como ela o faz.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="attack-card bg-slate-100 p-4 rounded-lg cursor-pointer" onclick="toggleAttackInfo(this)">
+                    <h3 class="font-bold text-base mb-2 flex items-center gap-2 text-slate-800"><span>🛡️</span>Interceção (Eavesdropping)</h3>
+                    <p class="attack-info hidden text-sm">Previne a leitura de mensagens por terceiros que estejam "escutando" a rede. Mesmo que a mensagem seja capturada, ela estará em formato cifrado e ilegível.</p>
+                </div>
+                <div class="attack-card bg-slate-100 p-4 rounded-lg cursor-pointer" onclick="toggleAttackInfo(this)">
+                    <h3 class="font-bold text-base mb-2 flex items-center gap-2 text-slate-800"><span>🛡️</span>Acesso a Servidores</h3>
+                    <p class="attack-info hidden text-sm">Se um servidor for invadido, as mensagens armazenadas continuarão seguras, pois estão criptografadas e a chave de descriptografia não está no servidor.</p>
+                </div>
+                 <div class="attack-card bg-slate-100 p-4 rounded-lg cursor-pointer" onclick="toggleAttackInfo(this)">
+                    <h3 class="font-bold text-base mb-2 flex items-center gap-2 text-slate-800"><span>🛡️</span>Vazamento de Dados</h3>
+                    <p class="attack-info hidden text-sm">Em caso de vazamento de dados do provedor, o conteúdo das conversas permanece privado e protegido pela criptografia.</p>
+                </div>
+                <div class="attack-card bg-slate-100 p-4 rounded-lg cursor-pointer" onclick="toggleAttackInfo(this)">
+                    <h3 class="font-bold text-base mb-2 flex items-center gap-2 text-slate-800"><span>🛡️</span>Man-in-the-Middle (MitM)</h3>
+                    <p class="attack-info hidden text-sm">Mitigado com a verificação de chaves de segurança (ex: QR code), garantindo que você está se comunicando com a pessoa certa e não com um impostor.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Quiz -->
+        <section id="quiz" class="section-card">
+            <h2 class="text-3xl font-bold mb-4 text-slate-900">4. Teste seu Conhecimento</h2>
+             <p class="text-slate-600 mb-8">Agora que você explorou o funcionamento e as vantagens da E2EE, teste o que aprendeu. Selecione a alternativa que você considera correta para a questão abaixo.</p>
+            <div class="bg-slate-100 p-6 rounded-lg">
+                <p class="font-semibold mb-4 text-slate-800">Contexto: Uma empresa está implementando E2EE em seu novo app de mensagens. <br>Comando: Qual a principal vantagem da E2EE para a privacidade das mensagens?</p>
+                <div id="quiz-options" class="space-y-3">
+                    <div class="quiz-option border-2 border-slate-200 p-3 rounded-lg cursor-pointer" data-key="a">a) Permite que o provedor acesse o conteúdo para moderação.</div>
+                    <div class="quiz-option border-2 border-slate-200 p-3 rounded-lg cursor-pointer" data-key="b">b) Criptografa mensagens no servidor central para otimização.</div>
+                    <div class="quiz-option border-2 border-slate-200 p-3 rounded-lg cursor-pointer" data-key="c" data-correct="true">c) Assegura que apenas remetente e destinatário leiam o conteúdo, tornando-o ilegível para terceiros.</div>
+                    <div class="quiz-option border-2 border-slate-200 p-3 rounded-lg cursor-pointer" data-key="d">d) Elimina a necessidade de segurança nos dispositivos dos usuários.</div>
+                </div>
+                <div id="quiz-feedback" class="mt-4 hidden space-y-2"></div>
+            </div>
+        </section>
+
+        <footer class="text-center text-slate-500 mt-12 py-6 border-t border-slate-200">
+            <p class="text-sm">Seminário II - Mecanismos de Segurança - Redes de Computadores II</p>
+            <p class="text-sm">PUC Minas</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Interactive Diagram Logic
+            const nextStepBtn = document.getElementById('next-step-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const stepContainer = document.getElementById('step-container');
+            const stepIndicatorsContainer = document.getElementById('step-indicators');
+            const steps = stepContainer.querySelectorAll('.step-content');
+            const totalSteps = steps.length;
+            let currentStep = 0;
+
+            function showStep(stepIndex) {
+                steps.forEach((step, index) => {
+                    step.classList.toggle('hidden-step', index !== stepIndex);
+                });
+
+                const indicators = stepIndicatorsContainer.children;
+                for (let i = 0; i < indicators.length; i++) {
+                    indicators[i].classList.toggle('active', i === stepIndex);
+                }
+
+                nextStepBtn.disabled = stepIndex >= totalSteps - 1;
+                restartBtn.disabled = stepIndex === 0;
+            }
+
+            nextStepBtn.addEventListener('click', () => {
+                if (currentStep < totalSteps - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            });
+            
+            restartBtn.addEventListener('click', () => {
+                currentStep = 0;
+                showStep(currentStep);
+            });
+            
+            showStep(currentStep);
+
+            // Attack Cards Logic
+            window.toggleAttackInfo = function(cardElement) {
+                const info = cardElement.querySelector('.attack-info');
+                info.classList.toggle('hidden');
+            }
+
+            // Quiz Logic
+            const quizOptionsContainer = document.getElementById('quiz-options');
+            const quizFeedback = document.getElementById('quiz-feedback');
+            const options = quizOptionsContainer.querySelectorAll('.quiz-option');
+            let quizAnswered = false;
+
+            const justifications = {
+                a: "Incorreta. A E2EE foi projetada para impedir o acesso do provedor ao conteúdo.",
+                b: "Incorreta. A criptografia e descriptografia ocorrem nos dispositivos dos usuários finais, não no servidor central.",
+                c: "Correta. A essência da E2EE é garantir que a privacidade da comunicação seja mantida exclusivamente entre os pontos finais.",
+                d: "Incorreta. A segurança do dispositivo do usuário é crucial para proteger a chave privada; se o dispositivo for comprometido, a E2EE pode ser contornada."
+            };
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    if (quizAnswered) return;
+                    quizAnswered = true;
+
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+
+                    let feedbackHTML = '<p class="font-bold text-slate-800">Justificativas:</p>';
+                    options.forEach(opt => {
+                        const isCorrect = opt.getAttribute('data-correct') === 'true';
+                        const key = opt.getAttribute('data-key');
+                        
+                        opt.classList.add(isCorrect ? 'correct' : 'incorrect');
+                        
+                        feedbackHTML += `<div class="p-3 rounded-lg ${isCorrect ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'} border ${isCorrect ? 'border-green-200' : 'border-red-200'}"><strong>Opção ${key})</strong> ${justifications[key]}</div>`;
+                    });
+
+                    quizFeedback.innerHTML = feedbackHTML;
+                    quizFeedback.classList.remove('hidden');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
